@@ -51,4 +51,3 @@ LABEL org.label-schema.vcs-url="https://github.com/neffets/docker-owncloud-serve
 LABEL org.label-schema.name="ownCloud Server"
 LABEL org.label-schema.vendor="neffets"
 LABEL org.label-schema.schema-version="1.0"
-
