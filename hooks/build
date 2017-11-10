@@ -6,6 +6,12 @@ docker build \
   --build-arg OWNCLOUD_TARBALL=${OWNCLOUD_TARBALL} \
   --build-arg LDAP_TARBALL=${LDAP_TARBALL} \
   --build-arg LDAP_CHECKSUM=${LDAP_CHECKSUM} \
+  --build-arg ACTIVITY_TARBALL=${ACTIVITY_TARBALL} \
+  --build-arg ACTIVITY_CHECKSUM=${ACTIVITY_CHECKSUM} \
+  --build-arg CALENDAR_TARBALL=${CALENDAR_TARBALL} \
+  --build-arg CALENDAR_CHECKSUM=${CALENDAR_CHECKSUM} \
+  --build-arg CONTACTS_TARBALL=${CONTACTS_TARBALL} \
+  --build-arg CONTACTS_CHECKSUM=${CONTACTS_CHECKSUM} \
   --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
   --build-arg VCS_REF=$(git rev-parse --short HEAD) \
   -t ${IMAGE_NAME} .

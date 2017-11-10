@@ -2,3 +2,4 @@
 /mysql
 
 /owncloud-*.tar.bz2
+Dockerfile.*

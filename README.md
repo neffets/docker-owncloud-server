@@ -1,14 +1,10 @@
-# ownCloud: Server
+# neffets / ownCloud Server
 
-[![](https://images.microbadger.com/badges/image/owncloud/server.svg)](https://microbadger.com/images/owncloud/server "Get your own image badge on microbadger.com")
+Use the base images provided by https://github.com/owncloud-docker/server
 
-This is the official ownCloud image for the community edition, it is built from our [base container](https://registry.hub.docker.com/u/owncloud/base/). This ownCloud image is designed to work with a data volume in the host filesystem and with separate MariaDB and Redis containers.
+and improves them with external user auth via imap
 
-
-## Versions
-
-To get an overview about the available versions please take a look at the [GitHub branches](https://github.com/owncloud-docker/server/branches/all) or our [Docker Hub tags](https://hub.docker.com/r/owncloud/server/tags/), these lists are always up to date. Please note that release candidates or alpha/beta versions are only temporary available, they will be removed after the final release of a version.
-
+The ownCloud image is the community edition, it is built from [owncloud/server](https://registry.hub.docker.com/u/owncloud/server/). This ownCloud image is designed to work with a data volume in the host filesystem and with separate MariaDB and Redis containers.
 
 ## Volumes
 
@@ -20,84 +16,58 @@ To get an overview about the available versions please take a look at the [GitHu
 * 80
 * 443
 
-## Available environment variables
+## Configuration
+
+Amongst the normal owncloud configuration which will be accessible in data/config/config.php
+you can add user_external authentication via imap, see ```example.config-imap.php```
 
 ```
-
+$CONFIG['user_backends'] =
+  array (
+    0 =>
+    array (
+      'class' => 'OC_User_IMAP',
+      'arguments' =>
+      array (
+        0 => '{imap.example.com:993/imap/ssl}INBOX',
+      ),
+    ),
+  );
 ```
 
-## Inherited environment variables
+## Build
 
-* [owncloud/base](https://github.com/owncloud-docker/base#available-environment-variables)
-* [owncloud/ubuntu](https://github.com/owncloud-docker/ubuntu#available-environment-variables)
-
-
-## Usage
-
-```bash
-docker run -ti \
-  --name owncloud \
-  owncloud/server:latest
+new method:
+```
+IMAGE_NAME=neffets/owncloud:${VERSION} ./hooks/build2
 ```
 
-
-### Launch with plain `docker`
-
-The installation of `docker` is not covered by this instructions, please follow the [official installation instructions](https://docs.docker.com/engine/installation/). After the installation of docker you can continue with the required MariaDB and Redis containers:
-
-```bash
-docker run -d \
-  --name redis \
-  webhippie/redis:latest
-
-docker run -d \
-  --name mariadb \
-  -e MARIADB_ROOT_PASSWORD=owncloud \
-  -e MARIADB_USERNAME=owncloud \
-  -e MARIADB_PASSWORD=owncloud \
-  -e MARIADB_DATABASE=owncloud \
-  --volume ./mysql:/var/lib/mysql \
-  webhippie/mariadb:latest
+old method:
+```
+. .env; IMAGE_NAME=neffets/owncloud:${VERSION} ./hooks/build
 ```
 
-Then you can start the ownCloud web server, you can customize the used environment variables as needed:
+You can then rebuild the docker container via:
+e.g. docker build -t neffets/owncloud:10.0.3 -f Dockerfile.10.0.3 .
 
-```bash
-export OWNCLOUD_VERSION=10.0.2 # The ownCloud version to launch
-export OWNCLOUD_DOMAIN=localhost
-export OWNCLOUD_ADMIN_USERNAME=admin
-export OWNCLOUD_ADMIN_PASSWORD=admin
-export OWNCLOUD_HTTP_PORT=80
-export OWNCLOUD_HTTPS_PORT=443
+The apps "user_ldap", "activity", "calendar" can be added automatically.
+The "contacts" app is no longer downloadable directly, please get it from https://marketplace.owncloud.com/apps/contacts and put it into the source/ folder.
 
-docker run -d \
-  --name owncloud \
-  --link mariadb:db \
-  --link redis:redis \
-  -p 80:80 \
-  -p 443:443 \
-  -e OWNCLOUD_DOMAIN=${OWNCLOUD_DOMAIN} \
-  -e OWNCLOUD_DB_TYPE=mysql \
-  -e OWNCLOUD_DB_NAME=owncloud \
-  -e OWNCLOUD_DB_USERNAME=owncloud \
-  -e OWNCLOUD_DB_PASSWORD=owncloud \
-  -e OWNCLOUD_DB_HOST=db \
-  -e OWNCLOUD_ADMIN_USERNAME=${OWNCLOUD_ADMIN_USERNAME} \
-  -e OWNCLOUD_ADMIN_PASSWORD=${OWNCLOUD_ADMIN_PASSWORD} \
-  -e OWNCLOUD_REDIS_ENABLED=true \
-  -e OWNCLOUD_REDIS_HOST=redis \
-  --volume ./data:/mnt/data:z \
-  owncloud/server:${OWNCLOUD_VERSION}
+For automated builds, if "contacts" app is not available, tehn You can put the extracted "contacts" app into
+your volume folder data/apps/contacts/. Enable "contacts" app via:
+```
+docker container -it $CONTAINERNAME occ app:enable contacts
 ```
 
+## Using
 
 ### Launch with `docker-compose`
 
-The installation of `docker-compose` is not covered by these instructions, please follow the [official installation instructions](https://docs.docker.com/compose/install/). After the installation of `docker-compose` you can continue with the following commands to start the ownCloud stack. First we are defining some required environment variables, then we are downloading the required `docker-compose.yml` file. The `.env` and `docker-compose.yml` are expected in the current working directory, when running `docker-compose` commands:
+The installation of `docker-compose` is not covered by these instructions, please follow the [official installation instructions](https://docs.docker.com/compose/install/). After the installation of `docker-compose` you can continue with the following commands to start the ownCloud stack. First we are defining some required environment variables, then we are downloading the required `docker-compose.yml` file. The `.env` and `docker-compose.yml` are expected in the current working directory, when running `docker-compose` commands, for the ownCloud version you can choose any of the available tags:
 
 ```bash
 cat << EOF > .env
-VERSION=10.0.2 # The ownCloud version to launch
+VERSION=10.0
 DOMAIN=localhost
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin
@@ -123,6 +93,39 @@ docker-compose logs
 
 By default `docker-compose up` will start Redis, MariaDB and ownCloud containers, the `./data` and `./mysql` directories are used to store the contents persistently. The container ports `80` and `443` are bound as configured in the `.env` file.
 
+### Commandline commands
+
+You can run `occ` commands inside the ownCloud docker image, without caring for sudo and apache user, as the command is wrapped in a little script caring for that. Just run:
+
+```
+occ user:report
+
+occ app:enable user_external
+occ app:enable calendar
+occ app:enable contacts
+
+occ upgrade --no-app-disable
+```
+
+You can also run commands via `docker exec`, or `docker-compse exec`:
+
+```
+docker exec -ti example_owncloud_1 occ user:report
+docker-compose exec owncloud occ user:report
+```
+
+### Troubleshooting
+
+after stack deploy a new container it rests sometime in maintenance mode, then you cann enable all via:
+```
+CONTAINER=`docker container ls |grep owncloud_www|cut -d" " -f1`
+
+docker container exec -it "${CONTAINER}" /bin/bash -c 'php -i|egrep -e "^imap" || (echo "NEW: Installing php-imap"; apt -y update; apt -y -f install; apt -y install php-imap; phpenmod imap; service apache2 restart)'
+docker container exec -it "${CONTAINER}" /bin/bash -c "occ maintenance:mode --off; occ upgrade"
+docker container exec -it "${CONTAINER}" occ app:enable user_external
+docker container exec -it "${CONTAINER}" occ app:enable calendar
+docker container exec -it "${CONTAINER}" occ app:enable contacts
+```
 
 ### Upgrade to newer version
 
@@ -143,40 +146,13 @@ By default we generate self-signed certificates on startup of the containers, yo
 
 By default you can access the ownCloud instance at [https://localhost/](https://localhost/) as long as you have not changed the port binding. The initial user gets set by the environment variables `ADMIN_USERNAME` and `ADMIN_PASSWORD`, per default it's set to `admin` for username and password.
 
-
-## Build locally
-
-The available versions should be already pushed to the Docker Hub, but in case you want to try a change locally you can always execute the following command (run from a cloned GitHub repository) to get an image built locally:
-
-```
-source .env
-IMAGE_NAME=owncloud/server:${VERSION} ./hooks/build
-```
-
-
-## Issues, Feedback and Ideas
-
-Open an [Issue](https://github.com/owncloud-docker/server/issues)
-
-
-## Contributing
-
-Fork -> Patch -> Push -> Pull Request
-
-
 ## Authors
 
-* [Thomas Boerger](https://github.com/tboerger)
-* [Felix Boehm](https://github.com/felixboehm)
-
+* orig: [Thomas Boerger](https://github.com/tboerger)
+* orig: [Felix Boehm](https://github.com/felixboehm)
+* here: [neffets](https://github.com/neffets)
 
 ## License
 
 MIT
 
-
-## Copyright
-
-```
-Copyright (c) 2017 Thomas Boerger <tboerger@owncloud.com>
-```
