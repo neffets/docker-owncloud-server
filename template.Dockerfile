@@ -25,11 +25,11 @@ RUN curl -sLo calendar.tar.gz ${CALENDAR_TARBALL} && \
   tar xfz calendar.tar.gz -C /var/www/owncloud/apps/calendar --strip-components 1 && \
   rm -f calendar.tar.gz
 
-RUN test -r ${CONTACTS_TARBALL} && mv -f ${CONTACTS_TARBALL} contacts.tar.gz && \
+RUN ( test -r ${CONTACTS_TARBALL} && mv -f ${CONTACTS_TARBALL} contacts.tar.gz && \
   echo "$CONTACTS_CHECKSUM contacts.tar.gz" | sha256sum -c - && \
   mkdir -p /var/www/owncloud/apps/contacts && \
   tar xfz contacts.tar.gz -C /var/www/owncloud/apps/contacts --strip-components 1 && \
-  rm -f contacts.tar.gz
+  rm -f contacts.tar.gz ) || echo "contacts app not found, put it into data/apps/contacts/"
 
 RUN find /var/www/owncloud \( \! -user www-data -o \! -group www-data \) -print0 | xargs -r -0 chown www-data:www-data
 

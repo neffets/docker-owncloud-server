@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+VERSION="$1"
+if [ "$VERSION" == "" ]; then
+	echo "Usage: $0 NN.N.n"
+	exit 1
+fi
+MINORVERSION=${VERSION%.[0-9]*}
+MAJORVERSION=${MINORVERSION%.[0-9]*}
+echo "VER=$VERSION MINOR=$MINORVERSION MAJOR=$MAJORVERSION"
+
+if [ "$MINORVERSION" == "$VERSION" -o "$MINORVERSION" == "$MAJORVERSION" ]; then
+	echo "ERROR: Version is not in format \\d.\\d.\\d"
+	exit 1 
+fi
+
+docker image push neffets/owncloud:${VERSION}
+docker image tag neffets/owncloud:${MINORVERSION} neffets/owncloud:${VERSION}
+docker image push neffets/owncloud:${MINORVERSION}
+docker image tag neffets/owncloud:${MAJORVERSION} neffets/owncloud:${VERSION}
+docker image push neffets/owncloud:${MAJORVERSION}
+
