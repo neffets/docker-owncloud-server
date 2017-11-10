@@ -1,11 +1,11 @@
 FROM owncloud/base:latest AS build
-MAINTAINER neffets <software\@neffets.de>
+MAINTAINER neffets <software@neffets.de>
 
 RUN curl -sLo - ${OWNCLOUD_TARBALL} | tar xfj - -C /var/www/
 #ADD owncloud-${VERSION}.tar.bz2 /var/www/
 
 COPY ./entrypoint-70-enable-userexternal.sh /etc/entrypoint.d/.
-COPY source/* /.
+COPY source/ /
 
 RUN curl -sLo user_ldap.tar.gz ${LDAP_TARBALL} && \
   echo "$LDAP_CHECKSUM user_ldap.tar.gz" | sha256sum -c - && \
