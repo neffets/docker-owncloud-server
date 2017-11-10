@@ -1,0 +1,8 @@
+#!/bin/bash
+. .env
+BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+VCS_REF=$(git rev-parse --short HEAD)
+. hooks/shell_expansion.sh Dockerfile.tmpl Dockerfile.${VERSION}
+
+docker build -t ${IMAGE_NAME}:${VERSION} -f Dockerfile.${VERSION} .
+echo REBUILD_VIA: docker build -t ${IMAGE_NAME}:${VERSION} -f Dockerfile.${VERSION} .

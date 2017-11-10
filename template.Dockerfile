@@ -1,24 +1,5 @@
-FROM owncloud/base:latest
-MAINTAINER ownCloud DevOps <devops@owncloud.com>
-
-ARG VERSION
-ARG BUILD_DATE
-ARG VCS_REF
-
-ARG OWNCLOUD_TARBALL
-ARG LDAP_TARBALL
-ARG LDAP_CHECKSUM
-ARG ACTIVITY_TARBALL
-ARG ACTIVITY_CHECKSUM
-ARG CALENDAR_TARBALL
-ARG CALENDAR_CHECKSUM
-ARG CONTACTS_TARBALL
-ARG CONTACTS_CHECKSUM
-
-RUN apt-get update && \
-  apt-get install -y php-imap && \
-  phpenmod imap && \
-  apt-get clean all;
+FROM owncloud/base:latest AS build
+MAINTAINER neffets <software\@neffets.de>
 
 RUN curl -sLo - ${OWNCLOUD_TARBALL} | tar xfj - -C /var/www/
 #ADD owncloud-${VERSION}.tar.bz2 /var/www/
@@ -52,10 +33,22 @@ RUN test -r ${CONTACTS_TARBALL} && mv -f ${CONTACTS_TARBALL} contacts.tar.gz && 
 
 RUN find /var/www/owncloud \( \! -user www-data -o \! -group www-data \) -print0 | xargs -r -0 chown www-data:www-data
 
+
+FROM owncloud/base:latest AS build
+MAINTAINER neffets <software@neffets.de>
+
+RUN apt-get update && \
+  apt-get install -y php-imap && \
+  phpenmod imap && \
+  apt-get clean all;
+
+COPY --from=build /var/www/owncloud/apps/ /var/www/owncloud/apps/
+
 LABEL org.label-schema.version=$VERSION
 LABEL org.label-schema.build-date=$BUILD_DATE
 LABEL org.label-schema.vcs-ref=$VCS_REF
-LABEL org.label-schema.vcs-url="https://github.com/owncloud-docker/server.git"
+LABEL org.label-schema.vcs-url="https://github.com/neffets/docker-owncloud-server.git"
 LABEL org.label-schema.name="ownCloud Server"
 LABEL org.label-schema.vendor="neffets"
 LABEL org.label-schema.schema-version="1.0"
+
