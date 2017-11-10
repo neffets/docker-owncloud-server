@@ -114,6 +114,19 @@ docker exec -ti example_owncloud_1 occ user:report
 docker-compose exec owncloud occ user:report
 ```
 
+### Troubleshooting
+
+after stack deploy a new container it rests sometime in maintenance mode, then you cann enable all via:
+```
+CONTAINER=`docker container ls |grep owncloud_www|cut -d" " -f1`
+
+docker container exec -it "${CONTAINER}" /bin/bash -c 'php -i|egrep -e "^imap" || (echo "NEW: Installing php-imap"; apt -y update; apt -y -f install; apt -y install php-imap; phpenmod imap; service apache2 restart)'
+docker container exec -it "${CONTAINER}" /bin/bash -c "occ maintenance:mode --off; occ upgrade"
+docker container exec -it "${CONTAINER}" occ app:enable user_external
+docker container exec -it "${CONTAINER}" occ app:enable calendar
+docker container exec -it "${CONTAINER}" occ app:enable contacts
+```
+
 ### Upgrade to newer version
 
 In order to upgrade an existing container-based installation you just need to shutdown the setup and replace the used container version. While booting the containers the upgrade process gets automatically triggered, so you don't need to perform any other manual step.
