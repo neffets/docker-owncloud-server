@@ -34,7 +34,7 @@ RUN ( test -r ${CONTACTS_TARBALL} && mv -f ${CONTACTS_TARBALL} contacts.tar.gz &
 RUN find /var/www/owncloud \( \! -user www-data -o \! -group www-data \) -print0 | xargs -r -0 chown www-data:www-data
 
 
-FROM owncloud/base:latest AS build
+FROM owncloud/base:latest
 MAINTAINER neffets <software@neffets.de>
 
 RUN apt-get update && \
